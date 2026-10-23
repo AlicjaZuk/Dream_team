@@ -814,6 +814,25 @@ Tibbles są zaprojektowane tak, abyś przypadkowo nie przytłoczył swojej konso
 
 ## Zadanie do wykonania
 
+Jesteś agentem/agentką nieruchomości. Klient oczekuje od ciebie zestawienia:
+- mieszkanie do 100 m2
+- 1 sypialnia 
+- 1 łazienka
+- pokaż je według typu 
+- posortuj tylko 5 mieszkań, zaczynając od najdroższych, pamiętając o tym, żeby był również jak największej powierzchni
+- wyświetl tylko adres, powierzchnię, cenę
+
+```{r}
+dane %>%
+  mutate(powierzchnia =(sq__ft*0.09290304))%>%
+  filter (powierzchnia<100 & beds==1 & baths==1)%>%
+  arrange(-price, -powierzchnia)%>%
+  select(street, city, powierzchnia, type, price)%>%
+  group_by(type)%>%
+  head(5)
+```
+
+
 Zadanie wykonaj w kilku etapach:
 
 1.  Zapisz "dane" jako obiekt tibble pod inną nazwą, np. dane2. Porównaj je.
