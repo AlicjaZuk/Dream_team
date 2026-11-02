@@ -146,9 +146,19 @@ head(nier)
 Sprawdź liczbę rekordów i kolumn, typy danych, liczbę braków oraz podstawowe statystyki. Zweryfikuj, czy `id` jest unikatowe. Wskaż zmienne liczbowe, których nie powinno się interpretować jako zwykłych miar ilościowych (np. identyfikator).
 
 ```{r nier-zad-1}
-# WASZE ROZWIĄZANIE
-# dim(), str(), summary(), colSums(is.na(...)), anyDuplicated()
-
+# liczba rekordów i kolumn
+dim(nier)
+# typy danych
+str(nier)
+# liczba braków
+sum(is.na(nier))
+# unikalne ID
+anyDuplicated(nier$id)
+# podstawowe statystyki
+colMeans(nier[, c("wiek_lat", "metro_m", "sklepy", "cena_10k_twd_ping")], na.rm = TRUE)   
+sapply(nier[, c("wiek_lat", "metro_m", "sklepy", "cena_10k_twd_ping")], median, na.rm = TRUE) 
+sapply(nier[, c("wiek_lat", "metro_m", "sklepy", "cena_10k_twd_ping")], sd, na.rm = TRUE)
+# zmienne, których nie powinno się interpretować jako zwykłych miar ilościowych: id, lat, lon
 ```
 
 ### Zadanie 2 — przelicz cenę i sprawdź jej rozkład
@@ -158,8 +168,22 @@ Dodaj kolumnę `cena_twd_m2`: `cena_10k_twd_ping * 10000 / 3.3`. Oblicz minimum,
 Pytanie: czy średnia jest wyższa od mediany? Co to mówi o rozkładzie cen? Nie interpretuj tej ceny jako wartości całego lokalu.
 
 ```{r nier-zad-2}
-# WASZE ROZWIĄZANIE
-# mutate(), summarise(), arrange(desc(...)), slice_head(n = 5)
+
+nier <- nier %>%
+  mutate(cena_twd_m2 = nier$cena_10k_twd_ping * 10000 / 3.3)
+
+nier %>%
+  summarise(minimum = min(cena_twd_m2, na.rm = TRUE),
+    mediana = median(cena_twd_m2, na.rm = TRUE),
+    srednia = mean(cena_twd_m2, na.rm = TRUE),
+    maksimum = max(cena_twd_m2, na.rm = TRUE))
+
+nier %>%    
+  arrange(-cena_twd_m2) %>%
+  head(5) %>%
+  select(cena_twd_m2, wiek_lat, metro_m, sklepy)
+
+# średnia jest niższa od mediany, oznacza to, że rozkład cen jest lewostronnie skośny - jest dużo nieruchomości o wysokich wartościach i niewiele bardzo niskich wartości, które obniżają średnią
 
 ```
 
@@ -170,9 +194,12 @@ Policz, ile nieruchomości znajduje się w odległości do 500 m od stacji oraz 
 Wynik opisz jednym zdaniem z liczbami i jednostkami. To proste porównanie opisowe, a nie dowód, że odległość powoduje zmianę ceny.
 
 ```{r nier-zad-3}
-# WASZE ROZWIĄZANIE
-# Wskazówka: mutate(blisko_metra = metro_m <= 500)
-# group_by(blisko_metra) %>% summarise(liczba = n(), mediana = median(...))
+nier%>%
+  mutate(blisko_metra = metro_m <= 500) %>%
+  group_by(blisko_metra) %>%
+  summarise(liczba = n(),
+            mediana =median(cena_twd_m2))
+# Nieruchomości blisko metra jest 211 i mediana dla ich ceny za m2 wynosi 135757.58. Nieruchomości znajdujących się dalej od metra jest 203 i mediana ich ceny za m2 wynosi 85151.52.  
 
 ```
 
@@ -191,8 +218,27 @@ nier <- nier %>% mutate(
 ```
 
 ```{r nier-zad-4}
-# WASZE ROZWIĄZANIE
-# group_by(strefa), summarise(), filter(wiek_lat <= 20)
+# zmienna grupująca
+nier <- nier %>% 
+  mutate(strefa = cut(metro_m, c(-Inf, 500, 1500, Inf),
+               labels = c("do 500 m", "500–1500 m", "ponad 1500 m"))
+         ) 
+nier %>%
+  group_by(strefa) %>%
+  summarise( liczba_obs =n(),
+             mediana_ceny = median(cena_twd_m2, na.rm = TRUE),
+             mediana_wieku = median(wiek_lat, na.rm = TRUE),
+             średnia_sklepów = mean(sklepy, na.rm = TRUE)
+  )
+
+nier %>%
+  filter(wiek_lat <=20) %>%
+  group_by(strefa) %>%
+  summarise( liczba_obs = n(),
+             mediana_ceny = median(cena_twd_m2)
+  )
+
+# porównanie wszystkich budynków z młodszymi daje takie same wyniki, jeżeli chodzi o ranking stref - która jest najdroższa (najbliżej metra), a która najtańsza (najdalej od metra), jednak mediana ceny rośnie w przypadku młodszych budynków
 
 ```
 
